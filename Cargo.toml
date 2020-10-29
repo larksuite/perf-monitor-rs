@@ -4,6 +4,30 @@ version = "0.1.0"
 authors = ["zhangli.pear <zhangli.pear@bytedance.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+alloc_hook_prof = [ "alloc_hook" ]
+alloc_hook_switchable = [ "alloc_hook" ]
+alloc_hook = []
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
+libc = "0.2"
+thiserror = "1"
+errno = "0.2"
+futures = "0.1"
+parking_lot = "0.10"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+winapi = { version = "0.3.8", features = ["winnt", "processthreadsapi", "sysinfoapi", "impl-default","std","heapapi","handleapi","psapi"] }
+scopeguard = "1"
+
+[target.'cfg(any(target_os = "android", target_os = "linux"))'.dependencies]
+lpfs = {git = "https://github.com/pearzl/lpfs.git", rev = "724ba8209"}
+
+[target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
+mach =  "0.3"
+
+[build-dependencies]
+bindgen = "0.51.1"
+cc = "1.0"
