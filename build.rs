@@ -75,9 +75,15 @@ fn main() {
         include_path = build_include_path("iphonesimulator");
     }
 
-    if target_os == Ok("macos".into()) && target_arch == Ok("x86_64".into()) {
-        env::set_var("TARGET", "x86_64-apple-darwin");
-        include_path = build_include_path("macosx");
+    if target_os == Ok("macos".into()) {
+        if target_arch == Ok("x86_64".into()) {
+            env::set_var("TARGET", "x86_64-apple-darwin");
+            include_path = build_include_path("macosx");
+        }
+        if target_arch == Ok("aarch64".into()) {
+            env::set_var("TARGET", "aarch64-apple-darwin");
+            include_path = build_include_path("macosx");
+        }
     }
 
     let outdir = env::var("OUT_DIR").expect("OUT_DIR not set");
