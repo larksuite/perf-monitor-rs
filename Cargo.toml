@@ -29,5 +29,5 @@ lpfs = {git = "https://github.com/pearzl/lpfs.git", rev = "724ba8209"}
 mach =  "0.3"
 
 [build-dependencies]
-bindgen = "0.51.1"
+bindgen = "0.55"
 cc = "1.0"
