@@ -20,18 +20,18 @@ impl From<Errno> for ProcessMemoryInfoError {
 #[derive(Clone, Default)]
 pub struct ProcessMemoryInfo {
     /// this is the non-swapped physical memory a process has used.
-    /// On UNIX it matches “top“‘s RES column).
+    /// On UNIX it matches `top`'s RES column).
     ///
-    /// On Windows this is an alias for wset field and it matches “Mem Usage”
+    /// On Windows this is an alias for wset field and it matches "Mem Usage"
     /// column of taskmgr.exe.
     pub resident_set_size: u64,
     pub resident_set_size_peak: u64,
 
     /// this is the total amount of virtual memory used by the process.
-    /// On UNIX it matches “top“‘s VIRT column.
+    /// On UNIX it matches `top`'s VIRT column.
     ///
-    /// On Windows this is an alias for pagefile field and it matches “Mem
-    /// Usage” “VM Size” column of taskmgr.exe.
+    /// On Windows this is an alias for pagefile field and it matches "Mem
+    /// Usage" "VM Size" column of taskmgr.exe.
     pub virtual_memory_size: u64,
 
     ///  This is the sum of:

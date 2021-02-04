@@ -3,6 +3,11 @@
 //!
 
 #![cfg_attr(test, allow(clippy::all, clippy::unwrap_used))]
+#![cfg_attr(doc, feature(doc_cfg))]
+#![cfg_attr(test, feature(test))]
+
+#[cfg(test)]
+extern crate test;
 
 #[allow(warnings)]
 #[cfg(any(target_os = "macos", target_os = "ios"))]

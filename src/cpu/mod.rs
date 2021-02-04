@@ -21,7 +21,7 @@
 //! | platform | thread | process |
 //! | -- | -- | -- |
 //! | windows |[GetThreadTimes] | [GetProcessTimes] |
-//! | linux & android | [/proc/<pid>/task/<tid>/stat][man5] | [clockgettime] |
+//! | linux & android | [/proc/{pid}/task/{tid}/stat][man5] | [clockgettime] |
 //! | macos & ios | [thread_info] | [getrusage] |
 //!
 //! [GetThreadTimes]: https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getthreadtimes

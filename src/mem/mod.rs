@@ -19,4 +19,5 @@ mod process_memory_info;
 pub use process_memory_info::{get_process_memory_info, ProcessMemoryInfo, ProcessMemoryInfoError};
 
 #[cfg(target_os = "macos")]
+#[cfg_attr(doc, doc(cfg(macos)))]
 pub mod apple;
