@@ -1,7 +1,7 @@
 //! Get file descriptor(say handle for windows) numbers for current process.
 //!
 //! ```
-//! use maat::fd::fd_count_cur;
+//! use perf_monitor::fd::fd_count_cur;
 //!
 //! let count = fd_count_cur().unwrap();
 //! ```

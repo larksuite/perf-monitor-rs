@@ -6,7 +6,7 @@
 //! This crate DOES NOT replace the global allocator by default. You need to make it as a `global_allocator` or enable the `allocation_counter` feature.
 //! ```ignore
 //! #[global_allocator]
-//! static _COUNTER: maat::mem::CountingAllocator = maat:mem::CountingAllocator;
+//! static _COUNTER: perf_monitor::mem::CountingAllocator = perf_monitor:mem::CountingAllocator;
 //! ```
 
 mod allocation_counter;

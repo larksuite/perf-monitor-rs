@@ -1,20 +1,20 @@
-# Maat
+# perf-monitor-rs
 
-[![github](https://img.shields.io/badge/GitHub-Maat-9b88bb?logo=github)]()
+[![github](https://img.shields.io/badge/GitHub-perf_monitor_rs-9b88bb?logo=github)]()
 [![minimum rustc 1.31.0](https://img.shields.io/badge/Minimum%20rustc-1.31.0-c18170?logo=rust)]()
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![doc 0.1.0](https://img.shields.io/badge/docs-0.1.0-c18170)](https://docs.rs/maat/)
+[![doc 0.1.0](https://img.shields.io/badge/docs-0.1.0-c18170)](https://docs.rs/perf_monitor/)
 
 ```toml
 # Cargo.toml
 [dependencies]
-maat = "0.1"
+perf_monitor = "0.1"
 ```
 
 A toolkit designed to be a foundation for applications to monitor their performance. It is:
-- **Cross-Platform:** Maat supports Windows, macOS, Linux, iOS, and Android.
-- **Safe Wrapper:** Maat uses many system C interfaces internally but exposes safe wrapper API outside. 
-- **Effective:** Maat is a thin wrapper around underlying apis, taking care of not introducing unnecessary overhead, choosing the most lightweight method among many homogeneous APIs.
+- **Cross-Platform:** perf-monitor supports Windows, macOS, Linux, iOS, and Android.
+- **Safe Wrapper:** perf-monitor uses many system C interfaces internally but exposes safe wrapper API outside. 
+- **Effective:** perf-monitor is a thin wrapper around underlying APIs, taking care of not introducing unnecessary overhead, choosing the most lightweight method among many homogeneous APIs.
 
 # Features
 - CPU
@@ -35,10 +35,10 @@ A toolkit designed to be a foundation for applications to monitor their performa
 A simple activity monitor:
 
 ```rust
-    use maat::cpu::{ThreadStat, ProcessStat, processor_numbers};
-    use maat::fd::fd_count_cur;
-    use maat::io::get_process_io_stats;
-    use maat::mem::get_process_memory_info;
+    use perf_monitor::cpu::{ThreadStat, ProcessStat, processor_numbers};
+    use perf_monitor::fd::fd_count_cur;
+    use perf_monitor::io::get_process_io_stats;
+    use perf_monitor::mem::get_process_memory_info;
 
     // cpu
     let core_num = processor_numbers().unwrap();
@@ -92,12 +92,12 @@ For example, CPU usage and FD number cost on these devices has following result:
 
 | profiling | Windows | MacOS | iOS | Android | Linux |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| [CPU](https://docs.rs/maat/cpu/index.html) | ✅ | ✅ |✅ |✅ |✅ |
-| [Memory](https://docs.rs/maat/mem/index.html) | ✅ |✅ |✅ |✅ |✅ |
-| [FD count](https://docs.rs/maat/fd/index.html) | ✅ |✅ |❌ |✅ |✅ |
-| [IO](https://docs.rs/maat/io/index.html) | ✅ |✅ |✅ |✅ |✅ 
+| [CPU](https://docs.rs/perf_monitor/cpu/index.html) | ✅ | ✅ |✅ |✅ |✅ |
+| [Memory](https://docs.rs/perf_monitor/mem/index.html) | ✅ |✅ |✅ |✅ |✅ |
+| [FD count](https://docs.rs/perf_monitor/fd/index.html) | ✅ |✅ |❌ |✅ |✅ |
+| [IO](https://docs.rs/perf_monitor/io/index.html) | ✅ |✅ |✅ |✅ |✅ 
 
-See [documents](https://docs.rs/maat/) of each module for usage and more details.
+See [documents](https://docs.rs/perf_monitor/) of each module for usage and more details.
 
 # Rust Version
 
@@ -121,7 +121,7 @@ Open an issue or create a PR to report bugs, add new features or improve documen
 If you are a new contributor, see [this page](https://github.com/firstcontributions/first-contributions) for help.
 
 
-# Why Maat?
+# Why perf_monitor_rs?
 
 There are some crates to do similar things, such as [spork](https://github.com/azuqua/spork.rs), [procfs](https://github.com/eminence/procfs), and [sysinfo](https://github.com/GuillaumeGomez/sysinfo). 
 
@@ -130,10 +130,10 @@ Our application needs to monitor itself at runtime to help us find out performan
 However, none of the above crates meet our needs. 
 
 * `spork` can't get other thread information other than the calling thread. Only memory and CPU information can be processed. And it stops updating for years.
-* `procfs` looks good enough now, but only support the Linux platform. In its early stages, when we developed Maat, there was no way to get thread information.
+* `procfs` looks good enough now, but only support the Linux platform. In its early stages, when we developed perf_monitor_rs, there was no way to get thread information.
 * `sysinfo` support all platform we need, but we think its interface is not elegant, because an explicit refresh is required before each call, otherwise an old value will be retrieved and you are not able to tell from the returning value. More importantly, it lacks some features like fd, CPU usage. 
 
-If you are building a cross-platform application and facing the same problem, we hope Maat can be your first choice. 
+If you are building a cross-platform application and facing the same problem, we hope perf_monitor_rs can be your first choice. 
 
 # License
-Maat is providing under the MIT license. See [LICENSE](./LICENSE).
+perf_monitor_rs is providing under the MIT license. See [LICENSE](./LICENSE).

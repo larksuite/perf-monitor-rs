@@ -1,12 +1,12 @@
 use std::time::Duration;
 use std::time::Instant;
 
-use maat::cpu::processor_numbers;
-use maat::cpu::ProcessStat;
-use maat::cpu::ThreadStat;
-use maat::fd::fd_count_cur;
-use maat::io::get_process_io_stats;
-use maat::mem::get_process_memory_info;
+use perf_monitor::cpu::processor_numbers;
+use perf_monitor::cpu::ProcessStat;
+use perf_monitor::cpu::ThreadStat;
+use perf_monitor::fd::fd_count_cur;
+use perf_monitor::io::get_process_io_stats;
+use perf_monitor::mem::get_process_memory_info;
 
 fn main() {
     build_some_threads();

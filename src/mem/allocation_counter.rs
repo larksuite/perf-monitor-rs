@@ -82,4 +82,5 @@ unsafe impl GlobalAlloc for CountingAllocator {
 }
 #[cfg(feature = "allocation_counter")]
 #[global_allocator]
-static _COUNTER: maat::mem::CountingAllocator = maat: mem::CountingAllocator;
+static _COUNTER: perf_monitor::mem::CountingAllocator =
+    perf_monitor: mem::CountingAllocator;

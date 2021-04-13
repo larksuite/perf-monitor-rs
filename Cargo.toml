@@ -1,5 +1,5 @@
 [package]
-name = "maat"
+name = "perf_monitor"
 version = "0.1.0"
 authors = ["zhangli.pear <zhangli.pear@bytedance.com>"]
 edition = "2018"

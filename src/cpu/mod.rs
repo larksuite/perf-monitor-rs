@@ -10,7 +10,7 @@
 //! ## Example
 //!
 //! ```
-//! # use maat::cpu::ThreadStat;
+//! # use perf_monitor::cpu::ThreadStat;
 //! let mut stat = ThreadStat::cur().unwrap();
 //! let _ = (0..1_000_000).into_iter().sum::<u64>();
 //! let usage = stat.cpu().unwrap();

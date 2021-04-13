@@ -87,7 +87,7 @@ fn main() {
     }
 
     let outdir = env::var("OUT_DIR").expect("OUT_DIR not set");
-    let outfile = Path::new(&outdir).join("maat_ios_macos_binding.rs");
+    let outfile = Path::new(&outdir).join("monitor_rs_ios_macos_binding.rs");
 
     bindgen::Builder::default()
         .derive_default(true)
