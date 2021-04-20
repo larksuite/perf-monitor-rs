@@ -1,8 +1,16 @@
 [package]
 name = "perf_monitor"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["zhangli.pear <zhangli.pear@bytedance.com>"]
 edition = "2018"
+
+license-file = "LICENSE"
+description = "A toolkit designed to be a foundation for applications to monitor their performance."
+repository = "https://github.com/larksuite/perf-monitor-rs"
+documentation = "https://docs.rs/perf_monitor/"
+
+categories = ["api-bindings", "accessibility", "development-tools"]
+keywords = ["perf", "statistics", "monitor", "performance"]
 
 
 [features]
@@ -23,7 +31,7 @@ winapi = { version = "0.3.8", features = ["winnt", "processthreadsapi", "sysinfo
 scopeguard = "1"
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dependencies]
-lpfs = {git = "https://github.com/pearzl/lpfs.git", rev = "724ba8209"}
+lpfs = "0.2"
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
 mach =  "0.3"

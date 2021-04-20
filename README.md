@@ -1,14 +1,15 @@
 # perf-monitor-rs
 
-[![github](https://img.shields.io/badge/GitHub-perf_monitor_rs-9b88bb?logo=github)]()
-[![minimum rustc 1.31.0](https://img.shields.io/badge/Minimum%20rustc-1.31.0-c18170?logo=rust)]()
+[![github](https://img.shields.io/badge/GitHub-perf_monitor_rs-9b88bb?logo=github)](https://github.com/larksuite/perf-monitor-rs)
+[![minimum rustc 1.31.0](https://img.shields.io/badge/Minimum%20rustc-1.31.0-c18170?logo=rust)](https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![doc 0.1.0](https://img.shields.io/badge/docs-0.1.0-c18170)](https://docs.rs/perf_monitor/)
+[![docs.rs](https://docs.rs/perf_monitor/badge.svg)](https://docs.rs/perf_monitor)
+[![crates.io](https://img.shields.io/crates/v/perf_monitor.svg)](https://crates.io/crates/perf_monitor)
 
 ```toml
 # Cargo.toml
 [dependencies]
-perf_monitor = "0.1"
+perf_monitor = "0.2"
 ```
 
 A toolkit designed to be a foundation for applications to monitor their performance. It is:
