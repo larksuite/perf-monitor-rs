@@ -121,7 +121,7 @@ Open an issue or create a PR to report bugs, add new features or improve documen
 If you are a new contributor, see [this page](https://github.com/firstcontributions/first-contributions) for help.
 
 
-# Why perf_monitor_rs?
+# Why perf-monitor-rs?
 
 There are some crates to do similar things, such as [spork](https://github.com/azuqua/spork.rs), [procfs](https://github.com/eminence/procfs), and [sysinfo](https://github.com/GuillaumeGomez/sysinfo). 
 
@@ -136,4 +136,4 @@ However, none of the above crates meet our needs.
 If you are building a cross-platform application and facing the same problem, we hope perf_monitor_rs can be your first choice. 
 
 # License
-perf_monitor_rs is providing under the MIT license. See [LICENSE](./LICENSE).
+perf-monitor is providing under the MIT license. See [LICENSE](./LICENSE).
