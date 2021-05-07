@@ -16,19 +16,21 @@ jobs:
         toolchain: stable
     - name: Check code format
       run: cargo fmt -- --check
-    - name: Check code style
-      run: cargo clippy --all-targets
+    - name: Download nightly toolchain
+      run: rustup toolchain install nightly-2021-02-11 && rustup +nightly-2021-02-11 component add clippy
+    # - name: Check code style # enable clippy in the future
+    #   run: cargo +nightly-2021-02-11 clippy --all-targets -- -Dwarnings
     - name: Build
       run: cargo build --verbose
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo +nightly-2021-02-11 test --lib --verbose
     - uses: nttld/setup-ndk@v1
       with:
         ndk-version: r21d
     - name: Build on android
-      run: rustup target armv7-linux-androideabi && add cargo build --target armv7-linux-androideabi
+      run: rustup target add armv7-linux-androideabi && cargo build --target armv7-linux-androideabi
     - name: Build on android 64
-      run: rustup target aarch64-linux-android && cargo build --target aarch64-linux-android
+      run: rustup target add aarch64-linux-android && cargo build --target aarch64-linux-android
   macos-ios:
     runs-on: macos-latest
     steps:
@@ -37,7 +39,7 @@ jobs:
       with:
         toolchain: stable
     - name: Build on MacOS
-      run: cargo build --verbose
+      run: cargo build  --verbose
     - name: Build for iOS
       run: rustup target add aarch64-apple-ios && cargo build --target aarch64-apple-ios
   windows:

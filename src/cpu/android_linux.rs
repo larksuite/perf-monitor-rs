@@ -45,8 +45,8 @@ impl ThreadStat {
         let total_time = Instant::now();
 
         Ok(ThreadStat {
-            pid: pid,
-            tid: tid,
+            pid,
+            tid,
             last_stat: (wtime, total_time),
         })
     }
