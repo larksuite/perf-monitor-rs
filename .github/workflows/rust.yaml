@@ -1,0 +1,52 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  
+jobs: 
+  linux-android: 
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Check code format
+      run: cargo fmt -- --check
+    - name: Check code style
+      run: cargo clippy --all-targets
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r21d
+    - name: Build on android
+      run: rustup target armv7-linux-androideabi && add cargo build --target armv7-linux-androideabi
+    - name: Build on android 64
+      run: rustup target aarch64-linux-android && cargo build --target aarch64-linux-android
+  macos-ios:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Build on MacOS
+      run: cargo build --verbose
+    - name: Build for iOS
+      run: rustup target add aarch64-apple-ios && cargo build --target aarch64-apple-ios
+  windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - name: Build on Windows
+      run: cargo build --verbose
+
