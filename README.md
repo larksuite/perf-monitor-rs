@@ -24,7 +24,7 @@ A toolkit designed to be a foundation for applications to monitor their performa
     - Usage of any thread in current process
     - Logic core number
 - Memory
-    - A lobal allocator that tracks rust allocations
+    - A global allocator that tracks rust allocations
     - Process memory info of current process for Windows and MacOS(Linux is conming soon).
 - IO
     - Disk IO
