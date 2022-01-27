@@ -10,7 +10,7 @@ use winapi::{
 pub type Result<T> = std::io::Result<T>;
 
 #[inline]
-fn process_fd_count_inner(handler: ProcessHandler) -> Result<u32> {
+fn process_fd_count_inner(handler: ProcessHandler) -> Result<usize> {
     let mut count = 0;
 
     let ret = unsafe { GetProcessHandleCount(handler.raw(), &mut count) };
@@ -18,15 +18,15 @@ fn process_fd_count_inner(handler: ProcessHandler) -> Result<u32> {
         return Err(std::io::Error::last_os_error());
     }
 
-    Ok(count)
+    Ok(count as usize)
 }
 
-pub fn fd_count_pid(pid: u32) -> Result<u32> {
+pub fn fd_count_pid(pid: u32) -> Result<usize> {
     let handler = unsafe { OpenProcess(PROCESS_QUERY_INFORMATION, FALSE as i32, pid) }.into();
     process_fd_count_inner(handler)
 }
 
-pub fn fd_count_cur() -> Result<u32> {
+pub fn fd_count_cur() -> Result<usize> {
     let handler = unsafe { GetCurrentProcess() }.into();
     process_fd_count_inner(handler)
 }

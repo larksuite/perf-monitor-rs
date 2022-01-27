@@ -47,5 +47,12 @@ use platform::Result;
 #[inline]
 pub fn fd_count_cur() -> Result<usize> {
     let count = platform::fd_count_cur()?;
-    Ok(count as usize)
+    Ok(count)
+}
+
+#[cfg(any(target_os = "windows", target_os = "android", target_os = "linux"))]
+#[inline]
+pub fn fd_count_pid(pid: u32) -> Result<usize> {
+    let count = platform::fd_count_pid(pid)?;
+    Ok(count)
 }

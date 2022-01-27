@@ -6,6 +6,7 @@ use perf_monitor::cpu::ProcessStat;
 use perf_monitor::cpu::ThreadStat;
 use perf_monitor::fd::fd_count_cur;
 use perf_monitor::io::get_process_io_stats;
+#[cfg(any(target_os = "macos", target_os = "windows"))]
 use perf_monitor::mem::get_process_memory_info;
 
 fn main() {
@@ -38,8 +39,9 @@ fn main() {
         );
 
         // mem
+        #[cfg(any(target_os = "macos", target_os = "windows"))]
         let mem_info = get_process_memory_info().unwrap();
-
+        #[cfg(any(target_os = "macos", target_os = "windows"))]
         println!(
             "[Memory] memory used: {} bytes, virtural memory used: {} bytes ",
             mem_info.resident_set_size, mem_info.virtual_memory_size
