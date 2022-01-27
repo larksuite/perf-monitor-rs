@@ -23,8 +23,6 @@ alloc_hook = []
 libc = "0.2"
 thiserror = "1"
 errno = "0.2"
-futures = "0.1"
-parking_lot = "0.10"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3.8", features = ["winnt", "processthreadsapi", "sysinfoapi", "impl-default","std","heapapi","handleapi","psapi"] }
