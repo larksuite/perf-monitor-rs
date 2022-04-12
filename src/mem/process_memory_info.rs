@@ -1,21 +1,4 @@
-use errno::Errno;
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-#[error("ProcessMemoryInfoError({code}):{msg}")]
-pub struct ProcessMemoryInfoError {
-    pub code: i32,
-    pub msg: String,
-}
-
-impl From<Errno> for ProcessMemoryInfoError {
-    fn from(e: Errno) -> Self {
-        Self {
-            code: e.into(),
-            msg: e.to_string(),
-        }
-    }
-}
+use std::io::{Error, ErrorKind, Result};
 /// Process Memory Info returned by `get_process_memory_info`
 #[derive(Clone, Default)]
 pub struct ProcessMemoryInfo {
@@ -25,6 +8,8 @@ pub struct ProcessMemoryInfo {
     /// On Windows this is an alias for wset field and it matches "Mem Usage"
     /// column of taskmgr.exe.
     pub resident_set_size: u64,
+    #[cfg(not(target_os = "linux"))]
+    #[cfg_attr(doc, doc(cfg(not(linux))))]
     pub resident_set_size_peak: u64,
 
     /// this is the total amount of virtual memory used by the process.
@@ -49,15 +34,17 @@ pub struct ProcessMemoryInfo {
     ///    + page_table
     ///
     /// details: <https://github.com/apple/darwin-xnu/blob/master/osfmk/kern/task.c>
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg_attr(doc, doc(macos))]
     pub phys_footprint: u64,
 
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg_attr(doc, doc(macos))]
     pub compressed: u64,
 }
 
 #[cfg(target_os = "windows")]
-fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo, ProcessMemoryInfoError> {
+fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
     use winapi::um::{
         processthreadsapi::GetCurrentProcess,
         psapi::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS},
@@ -91,12 +78,29 @@ fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo, ProcessMemoryInfo
             virtual_memory_size: process_memory_counters.PagefileUsage as u64,
         })
     } else {
-        Err(errno::errno().into())
+        Err(Error::last_os_error())
     }
 }
 
-#[cfg(target_os = "macos")]
-fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo, ProcessMemoryInfoError> {
+#[cfg(any(target_os = "linux", target_os = "android"))]
+fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
+    let mut parts = std::fs::read_to_string("/proc/self/statm")?.split(" ");
+    Ok(ProcessMemoryInfo {
+        resident_set_size: parts
+            .next()
+            .map(|s|s.parse().ok())
+            .flatten()
+            .unwrap_or_default(),
+        virtual_memory_size: parts
+            .next()
+            .map(|s|s.parse().ok())
+            .flatten()
+            .unwrap_or_default(),
+    })
+}
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
+fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
     use mach::{
         kern_return::KERN_SUCCESS, message::mach_msg_type_number_t, task_info::TASK_VM_INFO,
         vm_types::natural_t,
@@ -133,13 +137,13 @@ fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo, ProcessMemoryInfo
         })
     } else {
         // see https://docs.rs/mach/0.2.3/mach/kern_return/index.html for more details
-        Err(ProcessMemoryInfoError {
-            code: kern_ret,
-            msg: format!("DARWIN_KERN_RET_CODE:{}", kern_ret),
-        })
+        Err(Error::new(
+            ErrorKind::Other,
+            format!("DARWIN_KERN_RET_CODE:{}", kern_ret),
+        ))
     }
 }
 
-pub fn get_process_memory_info() -> Result<ProcessMemoryInfo, ProcessMemoryInfoError> {
+pub fn get_process_memory_info() -> Result<ProcessMemoryInfo> {
     get_process_memory_info_impl()
 }
