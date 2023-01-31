@@ -58,7 +58,6 @@ impl From<u32> for VMRegionKind {
 pub struct VMRegion {
     addr: mach_vm_address_t,
     size: mach_vm_size_t,
-    count: mach_msg_type_number_t,
     info: mach::vm_region::vm_region_extended_info,
 }
 
@@ -125,7 +124,6 @@ impl Iterator for VMRegionIter {
             let region = VMRegion {
                 addr: self.addr,
                 size,
-                count,
                 info,
             };
             self.addr = region.end_addr();
