@@ -14,6 +14,7 @@ jobs:
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: nightly
+        default: true
         components: rustfmt, clippy
     - name: Check code format
       run: cargo fmt -- --check
