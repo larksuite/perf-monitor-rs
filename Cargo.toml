@@ -35,5 +35,5 @@ lpfs = "0.2"
 mach =  "0.3"
 
 [build-dependencies]
-bindgen = "0.55"
+bindgen = "0.59"
 cc = "1.0"
