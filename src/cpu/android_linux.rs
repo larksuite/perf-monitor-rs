@@ -12,8 +12,8 @@ pub fn processor_numbers() -> io::Result<usize> {
 }
 
 #[inline]
-fn cur_process_id() -> io::Result<u32> {
-    Ok(std::process::id())
+fn cur_process_id() -> u32 {
+    std::process::id()
 }
 
 #[inline]
@@ -35,7 +35,7 @@ pub struct ThreadStat {
 impl ThreadStat {
     pub fn cur() -> io::Result<Self> {
         let tid = cur_thread_id()?;
-        let pid = cur_process_id()?;
+        let pid = cur_process_id();
         Self::build(pid, tid)
     }
 

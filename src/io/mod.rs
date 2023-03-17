@@ -3,13 +3,13 @@ use errno::Errno;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-#[error("IOStatsError({code}):{msg}")]
-pub struct IOStatsError {
+#[error("IoStatsError({code}):{msg}")]
+pub struct IoStatsError {
     pub code: i32,
     pub msg: String,
 }
 
-impl From<Errno> for IOStatsError {
+impl From<Errno> for IoStatsError {
     fn from(e: Errno) -> Self {
         Self {
             code: e.into(),
@@ -18,7 +18,7 @@ impl From<Errno> for IOStatsError {
     }
 }
 
-impl From<std::io::Error> for IOStatsError {
+impl From<std::io::Error> for IoStatsError {
     fn from(e: std::io::Error) -> Self {
         Self {
             code: e.kind() as i32,
@@ -27,7 +27,7 @@ impl From<std::io::Error> for IOStatsError {
     }
 }
 
-impl From<std::num::ParseIntError> for IOStatsError {
+impl From<std::num::ParseIntError> for IoStatsError {
     fn from(e: std::num::ParseIntError) -> Self {
         Self {
             code: 0,
@@ -37,7 +37,7 @@ impl From<std::num::ParseIntError> for IOStatsError {
 }
 /// A struct represents io status.
 #[derive(Debug, Clone, Default)]
-pub struct IOStats {
+pub struct IoStats {
     /// (linux & windows)  the number of read operations performed (cumulative)
     pub read_count: u64,
 
@@ -57,17 +57,17 @@ pub struct IOStats {
     target_os = "macos",
     target_os = "windows"
 ))]
-pub fn get_process_io_stats() -> Result<IOStats, IOStatsError> {
+pub fn get_process_io_stats() -> Result<IoStats, IoStatsError> {
     get_process_io_stats_impl()
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
-fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
+fn get_process_io_stats_impl() -> Result<IoStats, IoStatsError> {
     use std::{
         io::{BufRead, BufReader},
         str::FromStr,
     };
-    let mut io_stats = IOStats::default();
+    let mut io_stats = IoStats::default();
     let reader = BufReader::new(std::fs::File::open("/proc/self/io")?);
 
     for line in reader.lines() {
@@ -88,7 +88,7 @@ fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
 }
 
 #[cfg(target_os = "windows")]
-fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
+fn get_process_io_stats_impl() -> Result<IoStats, IoStatsError> {
     use winapi::um::{
         processthreadsapi::GetCurrentProcess, winbase::GetProcessIoCounters, winnt::IO_COUNTERS,
     };
@@ -107,7 +107,7 @@ fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
         GetProcessIoCounters(GetCurrentProcess(), &mut io_counters)
     };
     if ret != 0 {
-        Ok(IOStats {
+        Ok(IoStats {
             read_count: io_counters.ReadOperationCount,
             write_count: io_counters.WriteOperationCount,
             read_bytes: io_counters.ReadTransferCount,
@@ -119,7 +119,7 @@ fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
 }
 
 #[cfg(target_os = "macos")]
-fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
+fn get_process_io_stats_impl() -> Result<IoStats, IoStatsError> {
     use std::{ffi::c_void, os::raw::c_int};
 
     use crate::bindings::rusage_info_v2 as RUsageInfoV2;
@@ -143,7 +143,7 @@ fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
         )
     };
     if ret_code == 0 {
-        Ok(IOStats {
+        Ok(IoStats {
             read_bytes: rusage_info.ri_diskio_bytesread,
             write_bytes: rusage_info.ri_diskio_byteswritten,
             ..Default::default()
