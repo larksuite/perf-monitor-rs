@@ -1,17 +1,11 @@
-pub type Result<T> = std::io::Result<T>;
-
-pub fn fd_count_pid(pid: u32) -> Result<usize> {
-    let path = format!("/proc/{}/fd", pid);
-    let dir_entries = std::fs::read_dir(path)?;
-    let count = dir_entries.count();
-    Ok(count)
+pub fn fd_count_pid(pid: u32) -> std::io::Result<usize> {
+    // Subtract 2 to exclude `.`, `..` entries
+    std::fs::read_dir(format!("/proc/{}/fd", pid)).map(|entries| entries.count().saturating_sub(2))
 }
 
-pub fn fd_count_cur() -> Result<usize> {
-    let path = "/proc/self/fd";
-    let dir_entries = std::fs::read_dir(path)?;
-    let count = dir_entries.count();
-    Ok(count)
+pub fn fd_count_cur() -> std::io::Result<usize> {
+    // Subtract 3 to exclude `.`, `..` entries and fd created by `read_dir`
+    std::fs::read_dir("/proc/self/fd").map(|entries| entries.count().saturating_sub(3))
 }
 
 #[cfg(test)]

@@ -1,10 +1,6 @@
-pub type Result<T> = std::io::Result<T>;
-
-pub fn fd_count_cur() -> Result<usize> {
-    let path = "/dev/fd";
-    let dir_entries = std::fs::read_dir(path)?;
-    let count = dir_entries.count();
-    Ok(count)
+pub fn fd_count_cur() -> std::io::Result<usize> {
+    // Remove the opening fd created by `read_dir`
+    std::fs::read_dir("/dev/fd").map(|entries| entries.count().saturating_sub(1))
 }
 
 #[cfg(test)]
@@ -35,12 +31,8 @@ mod test {
 
         // case2: compare the result with lsof.
         {
-            let mut count_lsof = fd_lsof();
-            let mut count_devfd = fd_count_cur().unwrap();
-
-            count_devfd -= 1; // minus opening /dev/fd
-            count_lsof -= 2; // minus pipe fd between parent process and child process.
-
+            let count_devfd = fd_count_cur().unwrap();
+            let count_lsof = fd_lsof() - 2; // minus pipe fd between parent process and child process.
             assert_eq!(count_lsof, count_devfd);
         }
     }
