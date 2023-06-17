@@ -1,9 +1,9 @@
-//! Get cpu usage for current procss and specified thread.
+//! Get cpu usage for current process and specified thread.
 //!
 //! A method named `cpu` on `ThreadStat` and `ProcessStat`
-//! can retrive cpu usage of thread and process respectively.
+//! can retrieve cpu usage of thread and process respectively.
 //!
-//! The returning value is unnormalized, that is for mutil-processor machine,
+//! The returning value is unnormalized, that is for multi-processor machine,
 //! the cpu usage will beyond 100%, for example returning 2.8 means 280% cpu usage.
 //! If normalized value is what you expected, divide the returning by processor_numbers.
 //!
@@ -49,9 +49,13 @@ use std::{
     io, mem,
     time::{Duration, Instant},
 };
-
-pub use platform::{cpu_time, cur_thread_id, processor_numbers};
+pub use platform::{cpu_time, cur_thread_id};
 pub use std::io::Result;
+
+/// logical processor number
+pub fn processor_numbers() -> std::io::Result<usize> {
+    std::thread::available_parallelism().map(|x| x.get())
+}
 
 /// A struct to monitor process cpu usage
 pub struct ProcessStat {
@@ -147,7 +151,7 @@ mod test {
 
         assert!(usage < 0.01);
 
-        let num = platform::processor_numbers().unwrap();
+        let num = processor_numbers().unwrap();
         for _ in 0..num * 10 {
             std::thread::spawn(move || loop {
                 let _ = (0..10_000_000).into_iter().sum::<u128>();

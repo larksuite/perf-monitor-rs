@@ -77,13 +77,6 @@ pub fn cur_thread_id() -> io::Result<u32> {
     Ok(handler)
 }
 
-#[inline]
-pub fn processor_numbers() -> io::Result<usize> {
-    let mut sysinfo = SYSTEM_INFO::default();
-    unsafe { GetSystemInfo(&mut sysinfo) };
-    Ok(sysinfo.dwNumberOfProcessors as usize)
-}
-
 pub struct ThreadStat {
     tid: u32,
     last_work_time: u64,

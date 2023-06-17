@@ -1,43 +1,17 @@
-use crate::bindings::*;
+use std::mem::MaybeUninit;
 use std::time::Instant;
 use std::{io, mem::size_of, time::Duration};
-
-fn self_host() -> u32 {
-    unsafe { mach_host_self() }
-}
-
-/// logic processor number
-pub fn processor_numbers() -> io::Result<i32> {
-    let host = self_host();
-    let flavor = HOST_BASIC_INFO as i32;
-    let mut host_info_ = host_basic_info::default();
-    let mut host_info_cnt = size_of::<host_basic_info>() as u32;
-
-    let ret = unsafe {
-        host_info(
-            host,
-            flavor,
-            (&mut host_info_ as *mut host_basic_info) as *mut i32,
-            &mut host_info_cnt,
-        )
-    };
-    if ret != KERN_SUCCESS as i32 {
-        return Err(io::Error::from_raw_os_error(ret));
-    }
-
-    Ok(host_info_.logical_cpu)
-}
+use libc::{thread_basic_info, THREAD_BASIC_INFO};
 
 fn get_thread_basic_info(tid: u32) -> io::Result<thread_basic_info> {
-    let flavor = THREAD_BASIC_INFO;
-    let mut thread_basic_info_ = thread_basic_info::default();
+    let mut thread_basic_info_ = MaybeUninit::<thread_basic_info>::zeroed();
     let mut thread_info_cnt = size_of::<thread_basic_info>() as u32;
 
     let ret = unsafe {
-        thread_info(
+        libc::thread_info(
             tid,
-            flavor,
-            (&mut thread_basic_info_ as *mut thread_basic_info) as *mut i32,
+            THREAD_BASIC_INFO as u32,
+            thread_basic_info_,
             &mut thread_info_cnt,
         )
     };
@@ -133,13 +107,6 @@ pub fn cpu_time() -> io::Result<Duration> {
 mod tests {
     use super::*;
     use test::Bencher;
-
-    #[test]
-    fn test_processor_num() {
-        let t = processor_numbers().unwrap();
-        println!("processor num: {:?}", t);
-        assert!(t >= 1);
-    }
 
     // There is a field named `cpu_usage` in `thread_basic_info` which represents the CPU usage of the thread.
     // However, we have no idea about how long the interval is. And it will make the API being different from other platforms.

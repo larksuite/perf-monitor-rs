@@ -5,21 +5,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-/// logical processor number
-pub fn processor_numbers() -> io::Result<usize> {
-    let cpu_info = cpuinfo().map_err(conv_err)?;
-    Ok(cpu_info.physical_core_num())
-}
-
 #[inline]
-fn cur_process_id() -> io::Result<u32> {
-    Ok(std::process::id())
-}
-
-#[inline]
-pub fn cur_thread_id() -> io::Result<u32> {
-    let ret = unsafe { syscall(SYS_gettid) };
-    Ok(ret as u32)
+pub fn cur_thread_id() -> i32 {
+    libc::gettid()
 }
 
 pub fn clock_tick() -> i64 {
@@ -34,7 +22,7 @@ pub struct ThreadStat {
 
 impl ThreadStat {
     pub fn cur() -> io::Result<Self> {
-        let tid = cur_thread_id()?;
+        let tid = cur_thread_id();
         let pid = cur_process_id()?;
         Self::build(pid, tid)
     }
