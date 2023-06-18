@@ -10,24 +10,29 @@ pub mod process_times;
 pub mod system_times;
 pub mod thread_times;
 
+#[derive(Clone, Copy)]
+pub struct ThreadId(u32);
+
+impl ThreadId {
+    #[inline]
+    pub fn current() -> Self {
+        ThreadId(unsafe { GetCurrentThreadId() })
+    }
+}
+
 /// convert to u64, unit 100 ns
 fn filetime_to_ns100(ft: &FILETIME) -> u64 {
     ((ft.dwHighDateTime as u64) << 32) + ft.dwLowDateTime as u64
 }
 
-#[inline]
-pub fn cur_thread_id() -> u32 {
-    unsafe { GetCurrentThreadId() }
-}
-
 pub struct ThreadStat {
-    tid: u32,
+    tid: ThreadId,
     last_work_time: u64,
     last_total_time: u64,
 }
 
 impl ThreadStat {
-    fn get_times(thread_id: u32) -> Result<(u64, u64)> {
+    fn get_times(thread_id: ThreadId) -> Result<(u64, u64)> {
         let system_times = SystemTimes::capture()?;
         let thread_times = ThreadTimes::capture_with_thread_id(thread_id)?;
 
@@ -48,7 +53,7 @@ impl ThreadStat {
         })
     }
 
-    pub fn build(tid: u32) -> Result<Self> {
+    pub fn build(tid: ThreadId) -> Result<Self> {
         let (work_time, total_time) = Self::get_times(tid)?;
         Ok(ThreadStat {
             tid,

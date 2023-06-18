@@ -45,7 +45,7 @@ use ios_macos as platform;
 #[cfg(target_os = "windows")]
 use windows as platform;
 
-pub use platform::{cpu_time, cur_thread_id};
+pub use platform::{cpu_time, ThreadId};
 pub use std::io::Result;
 use std::{
     io, mem,
@@ -98,16 +98,11 @@ impl ThreadStat {
 
     /// return a monitor of specified thread.
     ///
-    /// `pid` is required on linux and android, and useless on other platform.
-    ///
     /// `tid` is **NOT** `std::thread::ThreadId`.
     /// `cur_thread_id` can retrieve a valid tid.
-    pub fn build(_pid: u32, tid: u32) -> Result<Self> {
+    pub fn build(thread_id: ThreadId) -> Result<Self> {
         Ok(ThreadStat {
-            #[cfg(any(target_os = "linux", target_os = "android"))]
-            stat: android_linux::ThreadStat::build(_pid, tid)?,
-            #[cfg(any(target_os = "ios", target_os = "macos", target_os = "windows"))]
-            stat: platform::ThreadStat::build(tid)?,
+            stat: platform::ThreadStat::build(thread_id)?,
         })
     }
 

@@ -10,7 +10,17 @@ use std::{
     time::Duration,
 };
 
-fn get_thread_basic_info(tid: u32) -> Result<thread_basic_info> {
+#[derive(Clone, Copy)]
+pub struct ThreadId(u32);
+
+impl ThreadId {
+    #[inline]
+    pub fn current() -> Self {
+        ThreadId(unsafe { mach_thread_self() })
+    }
+}
+
+fn get_thread_basic_info(ThreadId(tid): ThreadId) -> Result<thread_basic_info> {
     let mut thread_basic_info = MaybeUninit::<thread_basic_info>::zeroed();
     let mut thread_info_cnt = THREAD_BASIC_INFO_COUNT;
 
@@ -29,7 +39,7 @@ fn get_thread_basic_info(tid: u32) -> Result<thread_basic_info> {
 }
 
 pub struct ThreadStat {
-    tid: u32,
+    tid: ThreadId,
     stat: (thread_basic_info, Instant),
 }
 
@@ -38,7 +48,7 @@ impl ThreadStat {
         Self::build(cur_thread_id())
     }
 
-    pub fn build(tid: u32) -> Result<Self> {
+    pub fn build(tid: ThreadId) -> Result<Self> {
         Ok(ThreadStat {
             tid,
             stat: (get_thread_basic_info(tid)?, Instant::now()),
@@ -94,11 +104,6 @@ pub fn cur_thread_id() -> u32 {
     unsafe { mach_thread_self() }
 }
 
-// The `clock_gettime` is not supported in older version of mac/ios before 2016, so `getrusage` is used instead.
-//
-// `times` is not used, because it's returning value is clock ticks instead of time, lower accuracy, different with other platform and deprecated.
-//
-// `getrusage` is about 100ns slower than `clock_gettime` each round.
 pub fn cpu_time() -> Result<Duration> {
     let mut time = MaybeUninit::<rusage>::zeroed();
     let ret = unsafe { libc::getrusage(RUSAGE_SELF, time.as_mut_ptr()) };

@@ -1,102 +1,98 @@
-use libc::{syscall, sysconf, SYS_gettid, _SC_CLK_TCK};
-use lpfs::{pid::stat_of_task, proc::cpuinfo, ProcErr};
+use libc::timespec;
 use std::{
-    io,
+    convert::TryInto,
+    io::Error,
+    io::Result,
+    mem::MaybeUninit,
     time::{Duration, Instant},
 };
 
-#[inline]
-pub fn cur_thread_id() -> i32 {
-    libc::gettid()
+#[derive(Clone, Copy)]
+pub struct ThreadId(u64);
+
+impl ThreadId {
+    #[inline]
+    pub fn current() -> Self {
+        ThreadId(unsafe { libc::pthread_self() })
+    }
 }
 
-pub fn clock_tick() -> i64 {
-    unsafe { sysconf(_SC_CLK_TCK) as i64 }
+fn timespec_to_duration(timespec { tv_sec, tv_nsec }: timespec) -> Duration {
+    let sec: u64 = tv_sec.try_into().unwrap_or_default();
+    let nsec: u64 = tv_nsec.try_into().unwrap_or_default();
+    let (sec, nanos) = (
+        sec.saturating_add(nsec / 1_000_000_000),
+        (nsec % 1_000_000_000) as u32,
+    );
+    Duration::new(sec, nanos)
+}
+
+fn get_thread_cputime(ThreadId(thread): ThreadId) -> Result<timespec> {
+    let mut clk_id = 0;
+    let ret = unsafe { libc::pthread_getcpuclockid(thread, &mut clk_id) };
+    if ret != 0 {
+        return Err(Error::from_raw_os_error(ret));
+    }
+
+    let mut timespec = MaybeUninit::<timespec>::uninit();
+    let ret = unsafe { libc::clock_gettime(clk_id, timespec.as_mut_ptr()) };
+    if ret != 0 {
+        return Err(Error::last_os_error());
+    }
+    Ok(unsafe { timespec.assume_init() })
 }
 
 pub struct ThreadStat {
-    pid: u32,
-    tid: u32,
-    last_stat: (u64, Instant),
+    tid: ThreadId,
+    last_stat: (timespec, Instant),
 }
 
 impl ThreadStat {
-    pub fn cur() -> io::Result<Self> {
-        let tid = cur_thread_id();
-        let pid = cur_process_id()?;
-        Self::build(pid, tid)
+    pub fn cur() -> Result<Self> {
+        Self::build(ThreadId::current())
     }
 
-    pub fn build(pid: u32, tid: u32) -> io::Result<Self> {
-        let s = stat_of_task(pid, tid).map_err(conv_err)?;
-        let wtime = *s.utime() + *s.stime() + *s.cutime() as u64 + *s.cstime() as u64;
+    pub fn build(tid: ThreadId) -> Result<Self> {
+        let cputime = get_thread_cputime(tid)?;
         let total_time = Instant::now();
-
         Ok(ThreadStat {
-            pid,
             tid,
-            last_stat: (wtime, total_time),
+            last_stat: (cputime, total_time),
         })
     }
 
     /// un-normalized
-    pub fn cpu(&mut self) -> io::Result<f64> {
-        let s = stat_of_task(self.pid, self.tid).map_err(conv_err)?;
-        let wtime = *s.utime() + *s.stime() + *s.cutime() as u64 + *s.cstime() as u64;
+    pub fn cpu(&mut self) -> Result<f64> {
+        let cputime = get_thread_cputime(self.tid)?;
         let total_time = Instant::now();
-
-        let dt_total = (total_time - self.last_stat.1).as_millis();
-        if dt_total == 0 {
-            return Ok(0.0);
-        }
-        let dt_worktime = (wtime - self.last_stat.0) * 1000 / clock_tick() as u64;
-
-        self.last_stat = (wtime, total_time);
-
-        Ok(dt_worktime as f64 / dt_total as f64)
+        let (old_cputime, old_total_time) =
+            std::mem::replace(&mut self.last_stat, (cputime, total_time));
+        let cputime = cputime.tv_sec as f64 + cputime.tv_nsec as f64 / 1_000_000_000f64;
+        let old_cputime = old_cputime.tv_sec as f64 + old_cputime.tv_nsec as f64 / 1_000_000_000f64;
+        let dt_cputime = cputime - old_cputime;
+        let dt_total_time = total_time
+            .saturating_duration_since(old_total_time)
+            .as_secs_f64();
+        Ok(dt_cputime / dt_total_time)
     }
 
-    pub fn cpu_time(&mut self) -> io::Result<Duration> {
-        let s = stat_of_task(self.pid, self.tid).map_err(conv_err)?;
-        let wtime = *s.utime() + *s.stime() + *s.cutime() as u64 + *s.cstime() as u64;
+    pub fn cpu_time(&mut self) -> Result<Duration> {
+        let cputime = get_thread_cputime(self.tid)?;
         let total_time = Instant::now();
-
-        let dt_worktime = (wtime - self.last_stat.0) * 1000 / clock_tick() as u64;
-
-        self.last_stat = (wtime, total_time);
-
-        Ok(Duration::from_millis(dt_worktime))
+        let (old_cputime, _old_total_time) =
+            std::mem::replace(&mut self.last_stat, (cputime, total_time));
+        Ok(timespec_to_duration(timespec {
+            tv_sec: cputime.tv_sec - old_cputime.tv_sec,
+            tv_nsec: cputime.tv_nsec - old_cputime.tv_nsec,
+        }))
     }
 }
 
-pub fn cpu_time() -> io::Result<Duration> {
-    let mut time = libc::timespec {
-        tv_sec: 0,
-        tv_nsec: 0,
-    };
-
-    if unsafe { libc::clock_gettime(libc::CLOCK_PROCESS_CPUTIME_ID, &mut time) } == 0 {
-        Ok(Duration::new(time.tv_sec as u64, time.tv_nsec as u32))
-    } else {
-        Err(io::Error::last_os_error())
+pub fn cpu_time() -> Result<Duration> {
+    let mut timespec = MaybeUninit::<timespec>::uninit();
+    let ret = unsafe { libc::clock_gettime(libc::CLOCK_PROCESS_CPUTIME_ID, timespec.as_mut_ptr()) };
+    if ret != 0 {
+        return Err(Error::last_os_error());
     }
-}
-
-fn conv_err(err: ProcErr) -> io::Error {
-    match err {
-        ProcErr::IO(err) => err,
-        ProcErr::Parse(err) => io::Error::new(io::ErrorKind::InvalidData, format!("{}", err)),
-        ProcErr::BadFormat(err) => io::Error::new(io::ErrorKind::InvalidData, err),
-    }
-}
-
-#[cfg(test)]
-#[allow(clippy::all)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_clock_tick() {
-        assert_eq!(100, clock_tick())
-    }
+    Ok(timespec_to_duration(unsafe { timespec.assume_init() }))
 }
