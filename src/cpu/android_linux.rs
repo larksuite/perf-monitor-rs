@@ -1,4 +1,4 @@
-use libc::timespec;
+use libc::{timespec, pthread_t};
 use std::{
     convert::TryInto,
     io::Error,
@@ -8,7 +8,7 @@ use std::{
 };
 
 #[derive(Clone, Copy)]
-pub struct ThreadId(u64);
+pub struct ThreadId(pthread_t);
 
 impl ThreadId {
     #[inline]
