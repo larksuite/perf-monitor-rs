@@ -45,7 +45,7 @@ pub struct ThreadStat {
 
 impl ThreadStat {
     pub fn cur() -> Result<Self> {
-        Self::build(cur_thread_id())
+        Self::build(ThreadId::current())
     }
 
     pub fn build(tid: ThreadId) -> Result<Self> {
@@ -130,7 +130,7 @@ mod tests {
     // The cost of the calculation is very very small according to the result of the following benchmark.
     #[bench]
     fn bench_cpu_usage_by_calculate(b: &mut Bencher) {
-        let tid = cur_thread_id();
+        let tid = ThreadId::current();
         let last_stat = get_thread_basic_info(tid).unwrap();
         let last_time = Instant::now();
 
@@ -154,7 +154,7 @@ mod tests {
 
     #[bench]
     fn bench_cpu_usage_by_field(b: &mut Bencher) {
-        let tid = cur_thread_id();
+        let tid = ThreadId::current();
         b.iter(|| {
             let cur_stat = get_thread_basic_info(tid).unwrap();
             let _ = cur_stat.cpu_usage / 1000;
