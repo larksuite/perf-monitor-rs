@@ -14,8 +14,8 @@ keywords = ["perf", "statistics", "monitor", "performance"]
 
 
 [features]
-alloc_hook_prof = [ "alloc_hook" ]
-alloc_hook_switchable = [ "alloc_hook" ]
+alloc_hook_prof = ["alloc_hook"]
+alloc_hook_switchable = ["alloc_hook"]
 alloc_hook = []
 darwin_private = []
 
@@ -37,3 +37,6 @@ mach =  "0.3"
 [build-dependencies]
 bindgen = "0.59"
 cc = "1.0"
+
+[dev-dependencies]
+rand = "0.8.5"

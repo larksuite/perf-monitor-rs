@@ -75,16 +75,11 @@ impl ProcessStat {
     /// return the cpu usage from last invoke,
     /// or when this struct created if it is the first invoke.
     pub fn cpu(&mut self) -> io::Result<f64> {
-        let new_time = platform::cpu_time()?;
-        let old_time = mem::replace(&mut self.cpu_time, new_time);
+        let old_time = mem::replace(&mut self.cpu_time, platform::cpu_time()?);
         let old_now = mem::replace(&mut self.now, Instant::now());
-        let real_time = self.now.duration_since(old_now).as_secs_f64();
-        Ok(if real_time > 0.0 {
-            let cpu_time = self.cpu_time.saturating_sub(old_time).as_secs_f64();
-            cpu_time / real_time
-        } else {
-            0.0
-        })
+        let real_time = self.now.saturating_duration_since(old_now).as_secs_f64();
+        let cpu_time = self.cpu_time.saturating_sub(old_time).as_secs_f64();
+        Ok(cpu_time / real_time)
     }
 }
 
