@@ -44,7 +44,7 @@ impl ThreadStat {
     }
 
     pub fn cur() -> Result<Self> {
-        let tid = cur_thread_id();
+        let tid = ThreadId::current();
         let (work_time, total_time) = Self::get_times(tid)?;
         Ok(ThreadStat {
             tid,

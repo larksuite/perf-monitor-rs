@@ -1,6 +1,6 @@
+use super::ThreadId;
 use crate::utils::ptr_upgrade::PointerUpgrade;
 use crate::utils::windows_handle::Handle;
-use super::ThreadId;
 use std::io::Error;
 use std::io::Result;
 use std::os::raw::c_void;
@@ -24,7 +24,7 @@ pub struct ThreadTimes {
 impl ThreadTimes {
     #[allow(dead_code)]
     pub fn capture_current() -> Result<Self> {
-        unsafe { Self::capture_with_handle(ThreadId::current()) }
+        unsafe { Self::capture_with_handle(GetCurrentThread()) }
     }
 
     pub fn capture_with_thread_id(ThreadId(thread_id): ThreadId) -> Result<Self> {
