@@ -1,7 +1,7 @@
+use libc::{thread_basic_info, THREAD_BASIC_INFO};
 use std::mem::MaybeUninit;
 use std::time::Instant;
 use std::{io, mem::size_of, time::Duration};
-use libc::{thread_basic_info, THREAD_BASIC_INFO};
 
 fn get_thread_basic_info(tid: u32) -> io::Result<thread_basic_info> {
     let mut thread_basic_info_ = MaybeUninit::<thread_basic_info>::zeroed();
@@ -29,7 +29,7 @@ pub struct ThreadStat {
 
 impl ThreadStat {
     pub fn cur() -> io::Result<Self> {
-        Self::build(cur_thread_id()?)
+        Self::build(cur_thread_id())
     }
 
     pub fn build(tid: u32) -> io::Result<Self> {
@@ -80,8 +80,8 @@ fn time_value_to_u64(t: time_value) -> u64 {
 }
 
 #[inline]
-pub fn cur_thread_id() -> io::Result<u32> {
-    Ok(unsafe { mach_thread_self() })
+pub fn cur_thread_id() -> u32 {
+    unsafe { mach_thread_self() }
 }
 
 // The `clock_gettime` is not supported in older version of mac/ios before 2016, so `getrusage` is used instead.
@@ -114,7 +114,7 @@ mod tests {
     // The cost of the calculation is very very small according to the result of the following benchmark.
     #[bench]
     fn bench_cpu_usage_by_calculate(b: &mut Bencher) {
-        let tid = cur_thread_id().unwrap();
+        let tid = cur_thread_id();
         let last_stat = get_thread_basic_info(tid).unwrap();
         let last_time = Instant::now();
 
@@ -138,7 +138,7 @@ mod tests {
 
     #[bench]
     fn bench_cpu_usage_by_field(b: &mut Bencher) {
-        let tid = cur_thread_id().unwrap();
+        let tid = cur_thread_id();
         b.iter(|| {
             let cur_stat = get_thread_basic_info(tid).unwrap();
             let _ = cur_stat.cpu_usage / 1000;

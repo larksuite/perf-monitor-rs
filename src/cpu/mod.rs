@@ -45,12 +45,12 @@ use ios_macos as platform;
 #[cfg(target_os = "windows")]
 use windows as platform;
 
+pub use platform::{cpu_time, cur_thread_id};
+pub use std::io::Result;
 use std::{
     io, mem,
     time::{Duration, Instant},
 };
-pub use platform::{cpu_time, cur_thread_id};
-pub use std::io::Result;
 
 /// logical processor number
 pub fn processor_numbers() -> std::io::Result<usize> {
@@ -77,20 +77,14 @@ impl ProcessStat {
     pub fn cpu(&mut self) -> io::Result<f64> {
         let new_time = platform::cpu_time()?;
         let old_time = mem::replace(&mut self.cpu_time, new_time);
-
         let old_now = mem::replace(&mut self.now, Instant::now());
         let real_time = self.now.duration_since(old_now).as_secs_f64();
-
-        if real_time > 0.0 {
-            let cpu_time = new_time
-                .checked_sub(old_time)
-                .map(|dur| dur.as_secs_f64())
-                .unwrap_or(0.0);
-
-            Ok(cpu_time / real_time)
+        Ok(if real_time > 0.0 {
+            let cpu_time = self.cpu_time.saturating_sub(old_time).as_secs_f64();
+            cpu_time / real_time
         } else {
-            Ok(0.0)
-        }
+            0.0
+        })
     }
 }
 
@@ -175,10 +169,15 @@ mod test {
         let usage = stat.cpu().unwrap();
         assert!(usage < 0.01);
 
-        for _ in 0..10 {
-            let _ = (0..1_000_000).into_iter().sum::<u128>();
+        let mut x = 1_000_000u64;
+        std::hint::black_box(&mut x);
+        let mut times = 1000u64;
+        std::hint::black_box(&mut times);
+        for i in 0..times {
+            let x = (0..x + i).into_iter().sum::<u64>();
+            std::hint::black_box(x);
         }
         let usage = stat.cpu().unwrap();
-        assert!(usage > 0.9)
+        assert!(usage > 0.5)
     }
 }

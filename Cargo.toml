@@ -27,7 +27,6 @@ errno = "0.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3.8", features = ["winnt", "processthreadsapi", "sysinfoapi", "impl-default","std","heapapi","handleapi","psapi"] }
-scopeguard = "1"
 
 [target.'cfg(any(target_os = "android", target_os = "linux"))'.dependencies]
 lpfs = "0.2"
