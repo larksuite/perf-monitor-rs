@@ -81,10 +81,7 @@ impl ThreadStat {
         let total_time = Instant::now();
         let (old_cputime, _old_total_time) =
             std::mem::replace(&mut self.last_stat, (cputime, total_time));
-        Ok(timespec_to_duration(timespec {
-            tv_sec: cputime.tv_sec - old_cputime.tv_sec,
-            tv_nsec: cputime.tv_nsec - old_cputime.tv_nsec,
-        }))
+        Ok(timespec_to_duration(cputime).saturating_sub(timespec_to_duration(old_cputime)))
     }
 }
 
