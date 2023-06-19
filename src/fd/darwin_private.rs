@@ -33,7 +33,7 @@ pub fn fd_count_cur() -> std::io::Result<usize> {
 pub fn fd_count_pid(pid: u32) -> std::io::Result<usize> {
     let pid = pid as i32;
     let max_fds = unsafe {
-        let mut info: MaybeUninit<proc_taskallinfo> = MaybeUninit::zeroed();
+        let mut info = MaybeUninit::<proc_taskallinfo>::uninit();
         let buffersize = std::mem::size_of::<proc_taskallinfo>() as c_int;
         let ret = proc_pidinfo(
             pid,

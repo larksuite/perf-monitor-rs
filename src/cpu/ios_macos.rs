@@ -21,7 +21,7 @@ impl ThreadId {
 }
 
 fn get_thread_basic_info(ThreadId(tid): ThreadId) -> Result<thread_basic_info> {
-    let mut thread_basic_info = MaybeUninit::<thread_basic_info>::zeroed();
+    let mut thread_basic_info = MaybeUninit::<thread_basic_info>::uninit();
     let mut thread_info_cnt = THREAD_BASIC_INFO_COUNT;
 
     let ret = unsafe {
@@ -100,7 +100,7 @@ fn time_value_to_u64(t: time_value_t) -> u64 {
 }
 
 pub fn cpu_time() -> Result<Duration> {
-    let mut time = MaybeUninit::<rusage>::zeroed();
+    let mut time = MaybeUninit::<rusage>::uninit();
     let ret = unsafe { libc::getrusage(RUSAGE_SELF, time.as_mut_ptr()) };
     if ret != 0 {
         return Err(Error::last_os_error());
