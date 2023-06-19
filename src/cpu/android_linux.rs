@@ -1,4 +1,4 @@
-use libc::{timespec, pthread_t};
+use libc::{pthread_t, timespec};
 use std::{
     convert::TryInto,
     io::Error,
