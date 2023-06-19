@@ -1,9 +1,9 @@
-//! Get cpu usage for current procss and specified thread.
+//! Get cpu usage for current process and specified thread.
 //!
 //! A method named `cpu` on `ThreadStat` and `ProcessStat`
-//! can retrive cpu usage of thread and process respectively.
+//! can retrieve cpu usage of thread and process respectively.
 //!
-//! The returning value is unnormalized, that is for mutil-processor machine,
+//! The returning value is unnormalized, that is for multi-processor machine,
 //! the cpu usage will beyond 100%, for example returning 2.8 means 280% cpu usage.
 //! If normalized value is what you expected, divide the returning by processor_numbers.
 //!
@@ -45,13 +45,17 @@ use ios_macos as platform;
 #[cfg(target_os = "windows")]
 use windows as platform;
 
+pub use platform::{cpu_time, ThreadId};
+pub use std::io::Result;
 use std::{
     io, mem,
     time::{Duration, Instant},
 };
 
-pub use platform::{cpu_time, cur_thread_id, processor_numbers};
-pub use std::io::Result;
+/// logical processor number
+pub fn processor_numbers() -> std::io::Result<usize> {
+    std::thread::available_parallelism().map(|x| x.get())
+}
 
 /// A struct to monitor process cpu usage
 pub struct ProcessStat {
@@ -71,22 +75,11 @@ impl ProcessStat {
     /// return the cpu usage from last invoke,
     /// or when this struct created if it is the first invoke.
     pub fn cpu(&mut self) -> io::Result<f64> {
-        let new_time = platform::cpu_time()?;
-        let old_time = mem::replace(&mut self.cpu_time, new_time);
-
+        let old_time = mem::replace(&mut self.cpu_time, platform::cpu_time()?);
         let old_now = mem::replace(&mut self.now, Instant::now());
-        let real_time = self.now.duration_since(old_now).as_secs_f64();
-
-        if real_time > 0.0 {
-            let cpu_time = new_time
-                .checked_sub(old_time)
-                .map(|dur| dur.as_secs_f64())
-                .unwrap_or(0.0);
-
-            Ok(cpu_time / real_time)
-        } else {
-            Ok(0.0)
-        }
+        let real_time = self.now.saturating_duration_since(old_now).as_secs_f64();
+        let cpu_time = self.cpu_time.saturating_sub(old_time).as_secs_f64();
+        Ok(cpu_time / real_time)
     }
 }
 
@@ -105,16 +98,11 @@ impl ThreadStat {
 
     /// return a monitor of specified thread.
     ///
-    /// `pid` is required on linux and android, and useless on other platform.
-    ///
     /// `tid` is **NOT** `std::thread::ThreadId`.
-    /// `cur_thread_id` can retrieve a valid tid.
-    pub fn build(_pid: u32, tid: u32) -> Result<Self> {
+    /// [`ThreadId::current`] can be used to retrieve a valid tid.
+    pub fn build(thread_id: ThreadId) -> Result<Self> {
         Ok(ThreadStat {
-            #[cfg(any(target_os = "linux", target_os = "android"))]
-            stat: android_linux::ThreadStat::build(_pid, tid)?,
-            #[cfg(any(target_os = "ios", target_os = "macos", target_os = "windows"))]
-            stat: platform::ThreadStat::build(tid)?,
+            stat: platform::ThreadStat::build(thread_id)?,
         })
     }
 
@@ -147,7 +135,7 @@ mod test {
 
         assert!(usage < 0.01);
 
-        let num = platform::processor_numbers().unwrap();
+        let num = processor_numbers().unwrap();
         for _ in 0..num * 10 {
             std::thread::spawn(move || loop {
                 let _ = (0..10_000_000).into_iter().sum::<u128>();
@@ -171,10 +159,15 @@ mod test {
         let usage = stat.cpu().unwrap();
         assert!(usage < 0.01);
 
-        for _ in 0..10 {
-            let _ = (0..1_000_000).into_iter().sum::<u128>();
+        let mut x = 1_000_000u64;
+        std::hint::black_box(&mut x);
+        let mut times = 1000u64;
+        std::hint::black_box(&mut times);
+        for i in 0..times {
+            let x = (0..x + i).into_iter().sum::<u64>();
+            std::hint::black_box(x);
         }
         let usage = stat.cpu().unwrap();
-        assert!(usage > 0.9)
+        assert!(usage > 0.5)
     }
 }

@@ -26,9 +26,6 @@ For the components licensed under multiple licenses,
 we choose to redistribute them under the MIT license.  
 
 ******
-lpfs licensed under MIT License 
-Copyright (c) 2019 pearzl 
-******
 Cc-rs licensed under MIT or Apache-2.0 license 
 Copyright (c) 2014 Alex Crichton
 ******
@@ -39,11 +36,5 @@ All rights reserved.
 mach licensed under BSD-2-Clause or Apache-2.0 or MIT license.   
 Copyright (c) 2019 Nick Fitzgerald
 ******
-scopeguard licensed under MIT or Apache-2.0 license 
-Copyright (c) 2016-2019 Ulrik Sverdrup "bluss" and scopeguard developers
-******
 winapi-rs licensed under MIT or Apache-2.0 license 
 Copyright (c) 2015-2018 The winapi-rs Developers
-
-
-

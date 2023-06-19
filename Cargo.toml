@@ -14,8 +14,8 @@ keywords = ["perf", "statistics", "monitor", "performance"]
 
 
 [features]
-alloc_hook_prof = [ "alloc_hook" ]
-alloc_hook_switchable = [ "alloc_hook" ]
+alloc_hook_prof = ["alloc_hook"]
+alloc_hook_switchable = ["alloc_hook"]
 alloc_hook = []
 darwin_private = []
 
@@ -27,10 +27,6 @@ errno = "0.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winapi = { version = "0.3.8", features = ["winnt", "processthreadsapi", "sysinfoapi", "impl-default","std","heapapi","handleapi","psapi"] }
-scopeguard = "1"
-
-[target.'cfg(any(target_os = "android", target_os = "linux"))'.dependencies]
-lpfs = "0.2"
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]
 mach =  "0.3"
