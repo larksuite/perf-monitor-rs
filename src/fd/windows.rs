@@ -3,60 +3,40 @@ use winapi::{
     um::{
         handleapi::CloseHandle,
         processthreadsapi::{GetCurrentProcess, GetProcessHandleCount, OpenProcess},
-        winnt::{HANDLE, PROCESS_QUERY_INFORMATION},
+        winnt::{HANDLE, PROCESS_QUERY_LIMITED_INFORMATION},
     },
 };
 
-pub type Result<T> = std::io::Result<T>;
-
 #[inline]
-fn process_fd_count_inner(handler: ProcessHandler) -> Result<u32> {
+fn process_fd_count(handler: HANDLE) -> std::io::Result<u32> {
     let mut count = 0;
-
-    let ret = unsafe { GetProcessHandleCount(handler.raw(), &mut count) };
+    let ret = unsafe { GetProcessHandleCount(handler, &mut count) };
     if ret == 0 {
         return Err(std::io::Error::last_os_error());
     }
-
     Ok(count)
 }
 
-pub fn fd_count_pid(pid: u32) -> Result<u32> {
-    let handler = unsafe { OpenProcess(PROCESS_QUERY_INFORMATION, FALSE as i32, pid) }.into();
-    process_fd_count_inner(handler)
-}
-
-pub fn fd_count_cur() -> Result<u32> {
-    let handler = unsafe { GetCurrentProcess() }.into();
-    process_fd_count_inner(handler)
-}
-
-pub struct ProcessHandler(HANDLE);
-
-impl ProcessHandler {
-    pub fn raw(&self) -> HANDLE {
-        self.0
+pub fn fd_count_pid(pid: u32) -> std::io::Result<u32> {
+    // Use PROCESS_QUERY_LIMITED_INFORMATION to acquire less privilege and drop
+    // support for Windows Server 2023 and Windows XP:
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesshandlecount
+    let handle = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE as i32, pid) };
+    if handle.is_null() {
+        return Err(std::io::Error::last_os_error());
     }
+    let ret = process_fd_count(handle);
+    unsafe { CloseHandle(handle) };
+    ret
 }
 
-impl From<HANDLE> for ProcessHandler {
-    fn from(h: HANDLE) -> Self {
-        ProcessHandler(h)
-    }
-}
-
-impl Drop for ProcessHandler {
-    fn drop(&mut self) {
-        unsafe {
-            CloseHandle(self.0);
-        }
-    }
+pub fn fd_count_cur() -> std::io::Result<u32> {
+    process_fd_count(unsafe { GetCurrentProcess() })
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use winapi::um::processthreadsapi::GetCurrentProcessId;
 
     #[test]
     fn test_count_fd() {
@@ -64,8 +44,9 @@ mod test {
 
         // open then close handle
         for _ in 0..NUM {
-            let pid = unsafe { GetCurrentProcessId() };
-            let handler = unsafe { OpenProcess(PROCESS_QUERY_INFORMATION, FALSE as i32, pid) };
+            let pid = std::process::id();
+            let handler =
+                unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE as i32, pid) };
             unsafe { CloseHandle(handler) };
         }
         let new_count = fd_count_cur().unwrap();
@@ -74,8 +55,8 @@ mod test {
 
         // open some handle and do not close them
         for _ in 0..NUM {
-            let pid = unsafe { GetCurrentProcessId() };
-            unsafe { OpenProcess(PROCESS_QUERY_INFORMATION, FALSE as i32, pid) };
+            let pid = std::process::id();
+            unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE as i32, pid) };
         }
         let new_count = fd_count_cur().unwrap();
 

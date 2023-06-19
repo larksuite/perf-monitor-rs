@@ -17,6 +17,7 @@ keywords = ["perf", "statistics", "monitor", "performance"]
 alloc_hook_prof = [ "alloc_hook" ]
 alloc_hook_switchable = [ "alloc_hook" ]
 alloc_hook = []
+darwin_private = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]

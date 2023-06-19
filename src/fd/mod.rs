@@ -31,21 +31,29 @@ mod android_linux;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 use android_linux as platform;
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", not(feature = "darwin_private")))]
 mod macos;
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", not(feature = "darwin_private")))]
 use macos as platform;
 
-#[cfg(target_os = "ios")]
+#[cfg(all(target_os = "ios", not(feature = "darwin_private")))]
 mod ios;
-#[cfg(target_os = "ios")]
+#[cfg(all(target_os = "ios", not(feature = "darwin_private")))]
 use ios as platform;
 
-use platform::Result;
+#[cfg(all(
+    any(target_os = "macos", target_os = "ios"),
+    feature = "darwin_private"
+))]
+mod darwin_private;
+#[cfg(all(
+    any(target_os = "macos", target_os = "ios"),
+    feature = "darwin_private"
+))]
+use darwin_private as platform;
 
 /// return the fd count of current process
 #[inline]
-pub fn fd_count_cur() -> Result<usize> {
-    let count = platform::fd_count_cur()?;
-    Ok(count as usize)
+pub fn fd_count_cur() -> std::io::Result<usize> {
+    platform::fd_count_cur().map(|count| count as usize)
 }
