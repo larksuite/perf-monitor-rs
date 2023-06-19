@@ -99,11 +99,6 @@ fn time_value_to_u64(t: time_value_t) -> u64 {
         .saturating_add(t.microseconds.try_into().unwrap_or(0u64))
 }
 
-#[inline]
-pub fn cur_thread_id() -> u32 {
-    unsafe { mach_thread_self() }
-}
-
 pub fn cpu_time() -> Result<Duration> {
     let mut time = MaybeUninit::<rusage>::zeroed();
     let ret = unsafe { libc::getrusage(RUSAGE_SELF, time.as_mut_ptr()) };

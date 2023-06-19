@@ -99,7 +99,7 @@ impl ThreadStat {
     /// return a monitor of specified thread.
     ///
     /// `tid` is **NOT** `std::thread::ThreadId`.
-    /// `cur_thread_id` can retrieve a valid tid.
+    /// [`ThreadId::current`] can be used to retrieve a valid tid.
     pub fn build(thread_id: ThreadId) -> Result<Self> {
         Ok(ThreadStat {
             stat: platform::ThreadStat::build(thread_id)?,
