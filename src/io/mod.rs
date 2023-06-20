@@ -1,5 +1,4 @@
 //! Get io usage for current process.
-use errno::Errno;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -7,15 +6,6 @@ use thiserror::Error;
 pub struct IOStatsError {
     pub code: i32,
     pub msg: String,
-}
-
-impl From<Errno> for IOStatsError {
-    fn from(e: Errno) -> Self {
-        Self {
-            code: e.into(),
-            msg: e.to_string(),
-        }
-    }
 }
 
 impl From<std::io::Error> for IOStatsError {
@@ -106,49 +96,37 @@ fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
         // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getprocessiocounters
         GetProcessIoCounters(GetCurrentProcess(), &mut io_counters)
     };
-    if ret != 0 {
-        Ok(IOStats {
-            read_count: io_counters.ReadOperationCount,
-            write_count: io_counters.WriteOperationCount,
-            read_bytes: io_counters.ReadTransferCount,
-            write_bytes: io_counters.WriteTransferCount,
-        })
-    } else {
-        Err(errno::errno().into())
+    if ret == 0 {
+        return Err(std::io::Error::last_os_error().into());
     }
+    Ok(IOStats {
+        read_count: io_counters.ReadOperationCount,
+        write_count: io_counters.WriteOperationCount,
+        read_bytes: io_counters.ReadTransferCount,
+        write_bytes: io_counters.WriteTransferCount,
+    })
 }
 
 #[cfg(target_os = "macos")]
 fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
-    use std::{ffi::c_void, os::raw::c_int};
+    use libc::{rusage_info_v2, RUSAGE_INFO_V2};
+    use std::{mem::MaybeUninit, os::raw::c_int};
 
-    use crate::bindings::rusage_info_v2 as RUsageInfoV2;
-
-    #[link(name = "proc", kind = "dylib")]
-    extern "C" {
-        // Return resource usage information for the given pid, which can be a live
-        // process or a zombie.
-        //
-        // Returns 0 on success; or -1 on failure, with errno set to indicate the
-        // specific error.
-        fn proc_pid_rusage(pid: c_int, flavor: c_int, buffer: *mut c_void) -> c_int;
-    }
-
-    let mut rusage_info = RUsageInfoV2::default();
+    let mut rusage_info_v2 = MaybeUninit::<rusage_info_v2>::uninit();
     let ret_code = unsafe {
-        proc_pid_rusage(
+        libc::proc_pid_rusage(
             std::process::id() as c_int,
-            2,
-            (&mut rusage_info as *mut RUsageInfoV2).cast::<c_void>(),
+            RUSAGE_INFO_V2,
+            rusage_info_v2.as_mut_ptr() as *mut _,
         )
     };
-    if ret_code == 0 {
-        Ok(IOStats {
-            read_bytes: rusage_info.ri_diskio_bytesread,
-            write_bytes: rusage_info.ri_diskio_byteswritten,
-            ..Default::default()
-        })
-    } else {
-        Err(errno::errno().into())
+    if ret_code != 0 {
+        return Err(std::io::Error::last_os_error().into());
     }
+    let rusage_info_v2 = unsafe { rusage_info_v2.assume_init() };
+    Ok(IOStats {
+        read_bytes: rusage_info_v2.ri_diskio_bytesread,
+        write_bytes: rusage_info_v2.ri_diskio_byteswritten,
+        ..Default::default()
+    })
 }

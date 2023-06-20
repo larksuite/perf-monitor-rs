@@ -1,21 +1,5 @@
-use errno::Errno;
-use thiserror::Error;
+use std::io::{Error, Result};
 
-#[derive(Error, Debug)]
-#[error("ProcessMemoryInfoError({code}):{msg}")]
-pub struct ProcessMemoryInfoError {
-    pub code: i32,
-    pub msg: String,
-}
-
-impl From<Errno> for ProcessMemoryInfoError {
-    fn from(e: Errno) -> Self {
-        Self {
-            code: e.into(),
-            msg: e.to_string(),
-        }
-    }
-}
 /// Process Memory Info returned by `get_process_memory_info`
 #[derive(Clone, Default)]
 pub struct ProcessMemoryInfo {
@@ -57,7 +41,7 @@ pub struct ProcessMemoryInfo {
 }
 
 #[cfg(target_os = "windows")]
-fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo, ProcessMemoryInfoError> {
+fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
     use winapi::um::{
         processthreadsapi::GetCurrentProcess,
         psapi::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS},
@@ -84,26 +68,23 @@ fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo, ProcessMemoryInfo
             std::mem::size_of::<PROCESS_MEMORY_COUNTERS>() as u32,
         )
     };
-    if ret != 0 {
-        Ok(ProcessMemoryInfo {
-            resident_set_size: process_memory_counters.WorkingSetSize as u64,
-            resident_set_size_peak: process_memory_counters.PeakWorkingSetSize as u64,
-            virtual_memory_size: process_memory_counters.PagefileUsage as u64,
-        })
-    } else {
-        Err(errno::errno().into())
+    if ret == 0 {
+        return Err(Error::last_os_error());
     }
+    Ok(ProcessMemoryInfo {
+        resident_set_size: process_memory_counters.WorkingSetSize as u64,
+        resident_set_size_peak: process_memory_counters.PeakWorkingSetSize as u64,
+        virtual_memory_size: process_memory_counters.PagefileUsage as u64,
+    })
 }
 
 #[cfg(target_os = "macos")]
-fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo, ProcessMemoryInfoError> {
-    use mach::{
-        kern_return::KERN_SUCCESS, message::mach_msg_type_number_t, task_info::TASK_VM_INFO,
-        vm_types::natural_t,
-    };
-
+fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
     use crate::bindings::task_vm_info as TaskVMInfo;
-    use mach::{task::task_info, traps::mach_task_self};
+    use mach::{
+        kern_return::KERN_SUCCESS, message::mach_msg_type_number_t, task::task_info,
+        task_info::TASK_VM_INFO, traps::mach_task_self, vm_types::natural_t,
+    };
 
     let mut task_vm_info = TaskVMInfo::default();
     let task_vm_info_ptr = (&mut task_vm_info) as *mut TaskVMInfo;
@@ -123,23 +104,22 @@ fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo, ProcessMemoryInfo
             &mut task_info_cnt,
         )
     };
-    if kern_ret == KERN_SUCCESS {
-        Ok(ProcessMemoryInfo {
-            resident_set_size: task_vm_info.resident_size,
-            resident_set_size_peak: task_vm_info.resident_size_peak,
-            virtual_memory_size: task_vm_info.virtual_size,
-            phys_footprint: task_vm_info.phys_footprint,
-            compressed: task_vm_info.compressed,
-        })
-    } else {
+    if kern_ret != KERN_SUCCESS {
         // see https://docs.rs/mach/0.2.3/mach/kern_return/index.html for more details
-        Err(ProcessMemoryInfoError {
-            code: kern_ret,
-            msg: format!("DARWIN_KERN_RET_CODE:{}", kern_ret),
-        })
+        return Err(Error::new(
+            std::io::ErrorKind::Other,
+            format!("DARWIN_KERN_RET_CODE:{}", kern_ret),
+        ));
     }
+    Ok(ProcessMemoryInfo {
+        resident_set_size: task_vm_info.resident_size,
+        resident_set_size_peak: task_vm_info.resident_size_peak,
+        virtual_memory_size: task_vm_info.virtual_size,
+        phys_footprint: task_vm_info.phys_footprint,
+        compressed: task_vm_info.compressed,
+    })
 }
 
-pub fn get_process_memory_info() -> Result<ProcessMemoryInfo, ProcessMemoryInfoError> {
+pub fn get_process_memory_info() -> Result<ProcessMemoryInfo> {
     get_process_memory_info_impl()
 }
