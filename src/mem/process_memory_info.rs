@@ -4,7 +4,7 @@ use std::io::{Error, Result};
 #[derive(Clone, Default)]
 pub struct ProcessMemoryInfo {
     /// this is the non-swapped physical memory a process has used.
-    /// On UNIX it matches `top`'s RES column).
+    /// On UNIX it matches `top`'s RES column.
     ///
     /// On Windows this is an alias for wset field and it matches "Mem Usage"
     /// column of taskmgr.exe.
@@ -80,19 +80,19 @@ fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
 
 #[cfg(target_os = "macos")]
 fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
-    use crate::bindings::task_vm_info as TaskVMInfo;
+    use crate::bindings::task_vm_info;
     use mach::{
         kern_return::KERN_SUCCESS, message::mach_msg_type_number_t, task::task_info,
         task_info::TASK_VM_INFO, traps::mach_task_self, vm_types::natural_t,
     };
+    use std::mem::MaybeUninit;
 
-    let mut task_vm_info = TaskVMInfo::default();
-    let task_vm_info_ptr = (&mut task_vm_info) as *mut TaskVMInfo;
+    let mut task_vm_info = MaybeUninit::<task_vm_info>::uninit();
 
     // https://github.com/apple/darwin-xnu/blob/master/osfmk/mach/task_info.h line 396
     // #define TASK_VM_INFO_COUNT	((mach_msg_type_number_t) \
     // (sizeof (task_vm_info_data_t) / sizeof (natural_t)))
-    let mut task_info_cnt: mach_msg_type_number_t = (std::mem::size_of::<TaskVMInfo>()
+    let mut task_info_cnt: mach_msg_type_number_t = (std::mem::size_of::<task_vm_info>()
         / std::mem::size_of::<natural_t>())
         as mach_msg_type_number_t;
 
@@ -100,7 +100,7 @@ fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
         task_info(
             mach_task_self(),
             TASK_VM_INFO,
-            task_vm_info_ptr.cast::<i32>(),
+            task_vm_info.as_mut_ptr() as *mut _,
             &mut task_info_cnt,
         )
     };
@@ -111,6 +111,7 @@ fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
             format!("DARWIN_KERN_RET_CODE:{}", kern_ret),
         ));
     }
+    let task_vm_info = unsafe { task_vm_info.assume_init() };
     Ok(ProcessMemoryInfo {
         resident_set_size: task_vm_info.resident_size,
         resident_set_size_peak: task_vm_info.resident_size_peak,
