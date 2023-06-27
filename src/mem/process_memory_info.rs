@@ -42,35 +42,25 @@ pub struct ProcessMemoryInfo {
 
 #[cfg(target_os = "windows")]
 fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
-    use winapi::um::{
-        processthreadsapi::GetCurrentProcess,
-        psapi::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS},
-    };
-    let mut process_memory_counters = PROCESS_MEMORY_COUNTERS {
-        cb: 0,
-        PageFaultCount: 0,
-        PeakWorkingSetSize: 0,
-        WorkingSetSize: 0,
-        QuotaPeakPagedPoolUsage: 0,
-        QuotaPagedPoolUsage: 0,
-        QuotaPeakNonPagedPoolUsage: 0,
-        QuotaNonPagedPoolUsage: 0,
-        PagefileUsage: 0,
-        PeakPagefileUsage: 0,
-    };
+    use std::mem::MaybeUninit;
+    use windows_sys::Win32::System::ProcessStatus::GetProcessMemoryInfo;
+    use windows_sys::Win32::System::ProcessStatus::PROCESS_MEMORY_COUNTERS;
+    use windows_sys::Win32::System::Threading::GetCurrentProcess;
+    let mut process_memory_counters = MaybeUninit::<PROCESS_MEMORY_COUNTERS>::uninit();
     let ret = unsafe {
         // If the function succeeds, the return value is nonzero.
         // If the function fails, the return value is zero.
         // https://docs.microsoft.com/en-us/windows/win32/api/psapi/nf-psapi-getprocessmemoryinfo
         GetProcessMemoryInfo(
             GetCurrentProcess(),
-            &mut process_memory_counters,
+            process_memory_counters.as_mut_ptr(),
             std::mem::size_of::<PROCESS_MEMORY_COUNTERS>() as u32,
         )
     };
     if ret == 0 {
         return Err(Error::last_os_error());
     }
+    let process_memory_counters = unsafe { process_memory_counters.assume_init() };
     Ok(ProcessMemoryInfo {
         resident_set_size: process_memory_counters.WorkingSetSize as u64,
         resident_set_size_peak: process_memory_counters.PeakWorkingSetSize as u64,

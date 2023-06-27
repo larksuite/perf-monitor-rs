@@ -4,7 +4,8 @@ use super::windows::system_times::SystemTimes;
 use super::windows::thread_times::ThreadTimes;
 use std::io::Result;
 use std::time::Duration;
-use winapi::{shared::minwindef::FILETIME, um::processthreadsapi::GetCurrentThreadId};
+use windows_sys::Win32::Foundation::FILETIME;
+use windows_sys::Win32::System::Threading::GetCurrentThreadId;
 
 pub mod process_times;
 pub mod system_times;

@@ -1,20 +1,13 @@
-use std::ptr::NonNull;
+use std::num::NonZeroIsize;
 
-/// Triage a pointer to `Some(NonNull<T>)` or `None`
-pub trait PointerUpgrade<T>: Sized {
-    fn upgrade(self) -> Option<NonNull<T>>;
+/// Triage a return value of windows handle to `Some(handle)` or `None`
+pub trait HandleUpgrade: Sized {
+    fn upgrade(self) -> Option<NonZeroIsize>;
 }
 
-impl<T> PointerUpgrade<T> for *const T {
+impl HandleUpgrade for isize {
     #[inline]
-    fn upgrade(self) -> Option<NonNull<T>> {
-        NonNull::new(self as *mut _)
-    }
-}
-
-impl<T> PointerUpgrade<T> for *mut T {
-    #[inline]
-    fn upgrade(self) -> Option<NonNull<T>> {
-        NonNull::new(self)
+    fn upgrade(self) -> Option<NonZeroIsize> {
+        NonZeroIsize::new(self)
     }
 }

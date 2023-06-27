@@ -79,26 +79,21 @@ fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
 
 #[cfg(target_os = "windows")]
 fn get_process_io_stats_impl() -> Result<IOStats, IOStatsError> {
-    use winapi::um::{
-        processthreadsapi::GetCurrentProcess, winbase::GetProcessIoCounters, winnt::IO_COUNTERS,
-    };
-    let mut io_counters = IO_COUNTERS {
-        ReadOperationCount: 0,
-        WriteOperationCount: 0,
-        OtherOperationCount: 0,
-        ReadTransferCount: 0,
-        WriteTransferCount: 0,
-        OtherTransferCount: 0,
-    };
+    use std::mem::MaybeUninit;
+    use windows_sys::Win32::System::Threading::GetCurrentProcess;
+    use windows_sys::Win32::System::Threading::GetProcessIoCounters;
+    use windows_sys::Win32::System::Threading::IO_COUNTERS;
+    let mut io_counters = MaybeUninit::<IO_COUNTERS>::uninit();
     let ret = unsafe {
         // If the function succeeds, the return value is nonzero.
         // If the function fails, the return value is zero.
         // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getprocessiocounters
-        GetProcessIoCounters(GetCurrentProcess(), &mut io_counters)
+        GetProcessIoCounters(GetCurrentProcess(), io_counters.as_mut_ptr())
     };
     if ret == 0 {
         return Err(std::io::Error::last_os_error().into());
     }
+    let io_counters = unsafe { io_counters.assume_init() };
     Ok(IOStats {
         read_count: io_counters.ReadOperationCount,
         write_count: io_counters.WriteOperationCount,

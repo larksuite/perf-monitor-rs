@@ -1,10 +1,11 @@
-use libc::c_void;
 use std::io::Error;
 use std::io::Result;
-use winapi::um::processthreadsapi::GetCurrentProcess;
-use winapi::{shared::minwindef::FILETIME, um::processthreadsapi::GetProcessTimes};
+use std::mem::MaybeUninit;
+use windows_sys::Win32::Foundation::FILETIME;
+use windows_sys::Win32::Foundation::HANDLE;
+use windows_sys::Win32::System::Threading::GetCurrentProcess;
+use windows_sys::Win32::System::Threading::GetProcessTimes;
 
-#[derive(Default)]
 pub struct ProcessTimes {
     pub create: FILETIME,
     pub exit: FILETIME,
@@ -17,20 +18,30 @@ impl ProcessTimes {
         unsafe { Self::capture_with_handle(GetCurrentProcess()) }
     }
 
-    pub unsafe fn capture_with_handle(handle: *mut c_void) -> Result<Self> {
-        let mut process_times = ProcessTimes::default();
+    pub unsafe fn capture_with_handle(handle: HANDLE) -> Result<Self> {
+        let mut create = MaybeUninit::<FILETIME>::uninit();
+        let mut exit = MaybeUninit::<FILETIME>::uninit();
+        let mut kernel = MaybeUninit::<FILETIME>::uninit();
+        let mut user = MaybeUninit::<FILETIME>::uninit();
         let ret = unsafe {
             GetProcessTimes(
                 handle,
-                &mut process_times.create,
-                &mut process_times.exit,
-                &mut process_times.kernel,
-                &mut process_times.user,
+                create.as_mut_ptr(),
+                exit.as_mut_ptr(),
+                kernel.as_mut_ptr(),
+                user.as_mut_ptr(),
             )
         };
         if ret == 0 {
             return Err(Error::last_os_error());
         }
-        Ok(process_times)
+        Ok(unsafe {
+            Self {
+                create: create.assume_init(),
+                exit: exit.assume_init(),
+                kernel: kernel.assume_init(),
+                user: user.assume_init(),
+            }
+        })
     }
 }
