@@ -1,22 +1,22 @@
-use std::os::raw::c_void;
-use std::ptr::NonNull;
-use winapi::um::handleapi::CloseHandle;
+use std::num::NonZeroIsize;
+use windows_sys::Win32::Foundation::CloseHandle;
 
 /// Windows handle wrapper
-pub struct Handle(NonNull<c_void>);
+pub struct Handle(NonZeroIsize);
 
 impl Handle {
-    pub unsafe fn new(handle: NonNull<c_void>) -> Self {
+    /// Invalid handle leads to UB
+    pub unsafe fn new(handle: NonZeroIsize) -> Self {
         Handle(handle)
     }
 
-    pub fn as_ptr(&self) -> *mut c_void {
-        self.0.as_ptr()
+    pub fn as_handle(&self) -> isize {
+        self.0.get()
     }
 }
 
 impl Drop for Handle {
     fn drop(&mut self) {
-        unsafe { CloseHandle(self.0.as_ptr()) };
+        unsafe { CloseHandle(self.0.get()) };
     }
 }
