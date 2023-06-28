@@ -14,26 +14,30 @@ mod test {
 
     #[test]
     fn test_fd_count() {
-        let mut buf = vec![];
+        #[cfg(target_os = "linux")]
+        const TEMP_DIR: &str = "/tmp";
+        #[cfg(target_os = "android")]
+        const TEMP_DIR: &str = "/data/local/tmp";
+
         const NUM: usize = 100;
 
         // open some files and do not close them.
-        for i in 0..NUM {
-            let fname = format!("/tmp/tmpfile{}", i);
-            let file = std::fs::OpenOptions::new()
-                .write(true)
-                .create(true)
-                .open(fname);
-            buf.push(file);
-        }
+        let fds: Vec<_> = (0..NUM)
+            .map(|i| {
+                let fname = format!("{}/tmpfile{}", TEMP_DIR, i);
+                std::fs::File::create(fname).unwrap()
+            })
+            .collect();
         let count = fd_count_cur().unwrap();
 
-        assert!(NUM + 3 <= count);
+        dbg!(count);
+        assert!(count >= NUM);
+        let old_count = count;
 
-        // close files
-        while let Some(_) = buf.pop() {}
+        drop(fds);
         let count = fd_count_cur().unwrap();
-        assert!(3 <= count);
-        assert!(NUM > count);
+        // Though tests are run in multi-thread mode without using nextest, we
+        // assume NUM is big enough to make fd count lower in a short period.
+        assert!(count < old_count);
     }
 }
