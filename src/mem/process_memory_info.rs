@@ -9,6 +9,8 @@ pub struct ProcessMemoryInfo {
     /// On Windows this is an alias for wset field and it matches "Mem Usage"
     /// column of taskmgr.exe.
     pub resident_set_size: u64,
+    #[cfg(not(any(target_os = "android", target_os = "linux")))]
+    #[cfg_attr(doc, doc(cfg(not(linux))))]
     pub resident_set_size_peak: u64,
 
     /// this is the total amount of virtual memory used by the process.
@@ -33,10 +35,12 @@ pub struct ProcessMemoryInfo {
     ///    + page_table
     ///
     /// details: <https://github.com/apple/darwin-xnu/blob/master/osfmk/kern/task.c>
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg_attr(doc, doc(macos))]
     pub phys_footprint: u64,
 
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
+    #[cfg_attr(doc, doc(macos))]
     pub compressed: u64,
 }
 
@@ -68,7 +72,24 @@ fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
     })
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "linux", target_os = "android"))]
+fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
+    // https://www.kernel.org/doc/Documentation/filesystems/proc.txt
+    let statm = std::fs::read_to_string("/proc/self/statm")?;
+    let mut parts = statm.split(' ');
+    let Some(virtual_memory_size) = parts.next().and_then(|s| s.parse().ok()) else {
+        return Err(Error::new(std::io::ErrorKind::Other, "Invalid VmSize in /proc/self/statm"));
+    };
+    let Some(resident_set_size) = parts.next().and_then(|s| s.parse().ok()) else {
+        return Err(Error::new(std::io::ErrorKind::Other, "Invalid VmRSS in /proc/self/statm"));
+    };
+    Ok(ProcessMemoryInfo {
+        virtual_memory_size,
+        resident_set_size,
+    })
+}
+
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
     use crate::bindings::task_vm_info;
     use mach::{

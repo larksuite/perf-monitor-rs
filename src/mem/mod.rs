@@ -13,9 +13,7 @@ mod allocation_counter;
 
 pub use allocation_counter::CountingAllocator;
 
-#[cfg(any(target_os = "macos", target_os = "windows"))]
 mod process_memory_info;
-#[cfg(any(target_os = "macos", target_os = "windows"))]
 pub use process_memory_info::{get_process_memory_info, ProcessMemoryInfo};
 
 #[cfg(target_os = "macos")]
