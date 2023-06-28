@@ -89,7 +89,7 @@ fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
     })
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
     use crate::bindings::task_vm_info;
     use mach::{
