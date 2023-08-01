@@ -11,7 +11,7 @@ use std::{
 };
 
 #[derive(Clone, Copy)]
-pub struct ThreadId(u32);
+pub struct ThreadId(pub u32);
 
 impl ThreadId {
     #[inline]
@@ -19,8 +19,7 @@ impl ThreadId {
         ThreadId(unsafe { mach_thread_self() })
     }
 }
-
-fn get_thread_basic_info(ThreadId(tid): ThreadId) -> Result<thread_basic_info> {
+pub fn get_thread_basic_info(ThreadId(tid): ThreadId) -> Result<thread_basic_info> {
     let mut thread_basic_info = MaybeUninit::<thread_basic_info>::uninit();
     let mut thread_info_cnt = THREAD_BASIC_INFO_COUNT;
 

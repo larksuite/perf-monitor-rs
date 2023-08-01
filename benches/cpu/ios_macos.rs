@@ -1,14 +1,16 @@
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 mod tests {
-    use libc::{
-        mach_thread_self, thread_basic_info, time_value_t, KERN_SUCCESS,
-        THREAD_BASIC_INFO, THREAD_BASIC_INFO_COUNT,
-    };
-    use std::time::Instant;
-    use std::{
-        time::Duration,
-    };
     use criterion::Criterion;
+    use libc::time_value_t;
+    use perf_monitor::{
+        cpu::ThreadId,
+        cpu::get_thread_basic_info
+    };
+    use std::{
+        convert::TryInto,
+        time::Instant,
+        time::Duration
+    };
 
     #[inline]
     fn time_value_to_u64(t: time_value_t) -> u64 {
@@ -56,6 +58,15 @@ mod tests {
 }
 
 #[cfg(any(target_os = "ios", target_os = "macos"))]
-criterion::criterion_group!(benches, tests::bench_cpu_usage_by_calculate, tests::bench_cpu_usage_by_field);
+criterion::criterion_group!(
+    benches,
+    tests::bench_cpu_usage_by_calculate,
+    tests::bench_cpu_usage_by_field
+);
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 criterion::criterion_main!(benches);
+
+#[cfg(not(any(target_os = "ios", target_os = "macos")))]
+fn main() {
+    println!("This benchmark can only be run on iOS or MacOS.");
+}

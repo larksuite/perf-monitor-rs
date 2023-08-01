@@ -32,10 +32,10 @@ mach =  "0.3"
 bindgen = "0.59"
 cc = "1.0"
 
-#[[bench]]
-#name = "cpu_ios_macos"
-#path = "benches/cpu/ios_macos.rs"
-#harness = false
+[[bench]]
+name = "cpu_ios_macos"
+path = "benches/cpu/ios_macos.rs"
+harness = false
 
 [dev-dependencies]
 criterion = "0.5.1"

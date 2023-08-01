@@ -47,6 +47,9 @@ use windows as platform;
 
 pub use platform::{cpu_time, ThreadId};
 pub use std::io::Result;
+#[cfg(any(target_os = "ios", target_os = "macos"))]
+pub use ios_macos::get_thread_basic_info;
+
 use std::{
     io, mem,
     time::{Duration, Instant},
