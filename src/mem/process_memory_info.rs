@@ -73,19 +73,31 @@ fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
 }
 
 #[cfg(any(target_os = "linux", target_os = "android"))]
+#[inline]
+fn page_size() -> u64 {
+    static INIT: std::sync::Once = std::sync::Once::new();
+    static mut PAGE_SIZE: u64 = 0;
+
+    unsafe {
+        INIT.call_once(|| PAGE_SIZE = libc::sysconf(libc::_SC_PAGESIZE) as u64);
+        PAGE_SIZE
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
 fn get_process_memory_info_impl() -> Result<ProcessMemoryInfo> {
     // https://www.kernel.org/doc/Documentation/filesystems/proc.txt
     let statm = std::fs::read_to_string("/proc/self/statm")?;
     let mut parts = statm.split(' ');
-    let Some(virtual_memory_size) = parts.next().and_then(|s| s.parse().ok()) else {
+    let Some(virtual_memory_size_pages): Option<u64> = parts.next().and_then(|s| s.parse().ok()) else {
         return Err(Error::new(std::io::ErrorKind::Other, "Invalid VmSize in /proc/self/statm"));
     };
-    let Some(resident_set_size) = parts.next().and_then(|s| s.parse().ok()) else {
+    let Some(resident_set_size_pages): Option<u64> = parts.next().and_then(|s| s.parse().ok()) else {
         return Err(Error::new(std::io::ErrorKind::Other, "Invalid VmRSS in /proc/self/statm"));
     };
     Ok(ProcessMemoryInfo {
-        virtual_memory_size,
-        resident_set_size,
+        virtual_memory_size: virtual_memory_size_pages * page_size(),
+        resident_set_size: resident_set_size_pages * page_size(),
     })
 }
 
